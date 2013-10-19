@@ -7,7 +7,7 @@
 //
 
 #import "CMListViewController.h"
-#import <objc/runtime.h>
+#import "NSString+MethodList.h"
 
 @interface CMListViewController ()<UITableViewDataSource>
 @property(strong, nonatomic) UIButton *listClassMethodsButton;
@@ -49,25 +49,6 @@
 
 #pragma  mark - Target actions
 
-- (void)getClassOrInstanceMethods:(BOOL)isClass
-{
-    const char *ccName = [self.classNameField.text UTF8String];
-    int unsigned numMethods;
-    id classDefinition = nil;
-    
-    // inspect class or metaclass
-    if (isClass)
-        classDefinition = objc_getMetaClass(ccName);
-    else
-        classDefinition = objc_getClass(ccName);
-    
-    Method *methods = class_copyMethodList(classDefinition, &numMethods);
-    for (int i = 0; i < numMethods; i++) {
-        NSString *methodName = NSStringFromSelector(method_getName(methods[i]));
-        [self.methodList addObject:methodName];
-    }
-}
-
 - (void)listClassInstanceMethodsAction:(id)sender
 {
     //dismiss keyboard
@@ -76,14 +57,18 @@
     //clear data
     [self clearTableView];
     
+    NSMutableArray *methods = nil;
+    
     //load appropriate method list into array
     if (sender == self.listClassMethodsButton) {
         NSLog(@"class button clicked");
-        [self getClassOrInstanceMethods:YES];
+        methods = [NSString getClassOrInstanceMethodsFromClassName:self.classNameField.text getClassMethods:YES];
     } else if (sender == self.listInstanceMethodsButton) {
         NSLog(@"instance button clicked");
-        [self getClassOrInstanceMethods:NO];
+        methods = [NSString getClassOrInstanceMethodsFromClassName:self.classNameField.text getClassMethods:NO];
     }
+    
+    self.methodList = methods;
     
     //reload tableView
     [self.tableView reloadData];
